@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 2055" width="640" height="2055" role="img" aria-labelledby="title desc">
+<title id="title">Control flow &amp; servo timing</title><desc id="desc">Source execution with blocking regions: indefinite Wi-Fi retry, conditional cooling re-read until at most 24 Celsius or read error, then 15-second delay. Servo 0 degrees on each LOW pass, then 165 only if ct minus pt exceeds 1500 ms.</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#147d85"/></marker>
+<marker id="cloud-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#7051a3"/></marker>
+</defs>
+<style>
+text { font-family: Arial, Helvetica, sans-serif; fill: #183247; font-size: 22px; }
+.title { font-size: 30px; font-weight: 700; }
+.heading { font-size: 25px; font-weight: 700; }
+.small { font-size: 20px; }
+.muted { fill: #455e71; }
+.accent { fill: #096871; font-weight: 700; }
+.warn { fill: #82480d; font-weight: 700; }
+.box { fill: #ffffff; stroke: #b4c6d3; stroke-width: 2; }
+.block { fill: #fff7e8; stroke: #b87b25; stroke-width: 2; }
+.flow { fill: none; stroke: #147d85; stroke-width: 3; marker-end: url(#arrow); }
+.cloud { fill: none; stroke: #7051a3; stroke-width: 3; stroke-dasharray: 9 6; marker-end: url(#cloud-arrow); }
+</style>
+<rect width="640" height="2055" rx="16" fill="#f3f7fa"/>
+<text x="32" y="48" class="title">Control flow &amp; timing</text>
+<text x="32" y="83" class="small muted">Explicit delays ≠ measured response time</text>
+<path class="flow" d="M300 278 V322"/>
+<path class="flow" d="M300 494 V538"/>
+<path class="flow" d="M300 745 V789"/>
+<path class="flow" d="M300 1070 V1124"/>
+<path class="flow" d="M300 1317 V1363"/>
+<path class="flow" d="M300 1511 V1561"/>
+<path class="flow" d="M560 1246 H606 V1698 H560"/>
+<path class="flow" d="M300 1745 V1767 H24 V636 H60"/>
+<rect class="block" x="60" y="126" width="500" height="152" rx="12"/>
+<text x="82" y="163" class="heading">1  Setup: GPIO + serial, then Wi-Fi</text>
+<text x="82" y="201" class="">Retry while not connected: delay(300)</text>
+<text x="82" y="232" class="">BLOCKS indefinitely; no offline control</text>
+<rect class="box" x="60" y="322" width="500" height="172" rx="12"/>
+<text x="82" y="359" class="heading">2  Finish setup</text>
+<text x="82" y="397" class="">Firebase sign-up attempt → begin</text>
+<text x="82" y="428" class="">DHT setDelay(100) → LCD init</text>
+<text x="82" y="459" class="">Servo attach on GPIO0 / D3</text>
+<rect class="box" x="60" y="538" width="500" height="207" rx="12"/>
+<text x="82" y="575" class="heading">3  Outer pass: read → telemetry</text>
+<text x="82" y="613" class="">Set temperature / humidity to 0; read DHT</text>
+<text x="82" y="644" class="">If ready + sign-up OK + timer due:</text>
+<text x="82" y="675" class="">Both writes: timer unset OR &gt;1000 ms</text>
+<text x="82" y="706" class="">No read-success gate on these writes</text>
+<rect class="box" x="60" y="789" width="500" height="281" rx="12"/>
+<text x="82" y="826" class="heading">4  Sample detection and ct = millis()</text>
+<text x="82" y="864" class="">LOW: write servo 0° on every pass</text>
+<text x="82" y="895" class="">If ct − pt &gt; 1500 ms: write 165°;</text>
+<text x="82" y="926" class="">set pt = ct (strict &gt; comparison)</text>
+<text x="82" y="957" class="">HIGH: no servo-angle command</text>
+<text x="82" y="988" class="">Initial read result does not gate cooling</text>
+<text x="82" y="1019" class="">See servo timing note below</text>
+<rect class="box" x="60" y="1124" width="500" height="193" rx="12"/>
+<text x="82" y="1161" class="heading">5  LOW detection AND T &gt; 25°C?</text>
+<text x="82" y="1199" class="">YES: LED + fan signals HIGH</text>
+<text x="82" y="1230" class="">Enter the blocking cooling region</text>
+<text x="82" y="1261" class="">NO: bypass cooling → step 7</text>
+<rect class="block" x="60" y="1363" width="500" height="148" rx="12"/>
+<text x="82" y="1400" class="heading">6  While T &gt; 24°C: delay(1000), read</text>
+<text x="82" y="1438" class="">Read OK: repeat, or exit at T ≤ 24°C</text>
+<text x="82" y="1469" class="">Read ERROR: print error, break</text>
+<rect class="block" x="60" y="1561" width="500" height="184" rx="12"/>
+<text x="82" y="1598" class="heading">7  Finish the outer pass</text>
+<text x="82" y="1636" class="">After cooling ONLY: both signals LOW;</text>
+<text x="82" y="1667" class="">report threshold/error; delay(15000)</text>
+<text x="82" y="1698" class="">Then all paths: LCD update; delay(500)</text>
+<text x="82" y="1729" class="">Return to step 3</text>
+<text x="60" y="1801" class="heading">Servo timing: commands, not a motion trace</text>
+<text x="60" y="1844" class="">pt starts at global millis(), not detection onset.</text>
+<text x="60" y="1875" class="">LOW pass: 0° → if elapsed &gt;1500 ms, 165°.</text>
+<text x="60" y="1906" class="">Next LOW pass: 0° again. HIGH: no write.</text>
+<text x="60" y="1937" class="">Blocking waits postpone the next sample.</text>
+<text x="60" y="2008" class="small warn">Amber: blocking regions • all times are milliseconds</text>
+</svg>

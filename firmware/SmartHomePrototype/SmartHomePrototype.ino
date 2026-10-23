@@ -27,8 +27,8 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 //-----------------------------output-------------------------------------//
 
-int ledPin = 13; // the LED pin GPIO4 D7 
-int FanPin = 12; // the LED pin GPIO5 D6
+int ledPin = 13; // LED control signal: GPIO13 D7
+int FanPin = 12; // Fan-driver control signal: GPIO12 D6
 const int sensorPin = 16; // Digital pin GPIO16 D0  
 int servoPin = 0; // GPIO0 D3 
 
@@ -83,7 +83,7 @@ void setup() {
   lcd.init();
   lcd.backlight();
   
-	myservo.attach(servoPin); // attaches the servo on pin 18 to the servo object
+  myservo.attach(servoPin); // Servo signal: GPIO0 D3
 //-------------------------------------------------------------------------------------------------------//
 }
 
@@ -92,10 +92,9 @@ void loop() {
   int temperature = 0;
   int humidity = 0;
   int result = dht11.readTemperatureHumidity(temperature, humidity);
-  char yes[] = "Someone was detected";
-  char no[] = "Nobody is around";
+
 //----------------------------------sending data to the firebase-------------------------------------------//
-if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 1000 || sendDataPrevMillis == 0)){
+  if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 1000 || sendDataPrevMillis == 0)) {
     sendDataPrevMillis = millis();
     // Write the temperature on the database path sensor/temperature
     if (Firebase.RTDB.setInt(&fbdo, "sensor/temperature", temperature)){
@@ -115,7 +114,8 @@ if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 1000 || sen
     else {
       Serial.println("FAILED");
       Serial.println("REASON: " + fbdo.errorReason());
-    }}
+    }
+  }
 //----------------------------------stsrt controling the system---------------------------------------------//
   // Check for motion first
   int motion = digitalRead(sensorPin);
@@ -125,17 +125,16 @@ if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 1000 || sen
 
     myservo.write(0);
 
-  if (ct - pt > 1500){
-    lcd.setCursor(0, 0);
-    lcd.print("Motion detected!");
-    myservo.write(165);
-    pt = ct;
-  }
+    if (ct - pt > 1500) {
+      lcd.setCursor(0, 0);
+      lcd.print("Motion detected!");
+      myservo.write(165);
+      pt = ct;
+    }
 
     Serial.println("Motion Detected!");
     
-    //lcd.setCursor(0, 0);
-   // lcd.print("Motion detected!");
+
 
     if (result == 0) {
       Serial.print("Temperature: ");
@@ -164,16 +163,20 @@ if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 1000 || sen
 
       digitalWrite(ledPin, LOW);
       digitalWrite(FanPin, LOW);
-      Serial.println("Fan and LED turned OFF (Temperature reached below 24°C)");
+      if (result != 0) {
+        Serial.println("Fan and LED turned OFF (sensor read error)");
+      } else {
+        Serial.println("Fan and LED turned OFF (temperature <= 24 C)");
+      }
       delay(15000);
     }
   } 
    
 
-  if(motion == HIGH) {
+  if (motion == HIGH) {
    
     Serial.println("No Motion Detected");
-     lcd.setCursor(0, 0);
+    lcd.setCursor(0, 0);
     lcd.print("No Motion Detected");
     
   }

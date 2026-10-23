@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 1210" width="640" height="1210" role="img" aria-labelledby="title desc">
+<title id="title">System &amp; data flow</title><desc id="desc">Conceptual source interfaces, not validated power wiring. DHT11 and active-low detection feed the ESP8266. Outputs are LCD, servo and LED/fan control signals. A separate dashed route shows attempted outbound Firebase writes.</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#147d85"/></marker>
+<marker id="cloud-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#7051a3"/></marker>
+</defs>
+<style>
+text { font-family: Arial, Helvetica, sans-serif; fill: #183247; font-size: 22px; }
+.title { font-size: 30px; font-weight: 700; }
+.heading { font-size: 25px; font-weight: 700; }
+.small { font-size: 20px; }
+.muted { fill: #455e71; }
+.accent { fill: #096871; font-weight: 700; }
+.warn { fill: #82480d; font-weight: 700; }
+.box { fill: #ffffff; stroke: #b4c6d3; stroke-width: 2; }
+.block { fill: #fff7e8; stroke: #b87b25; stroke-width: 2; }
+.flow { fill: none; stroke: #147d85; stroke-width: 3; marker-end: url(#arrow); }
+.cloud { fill: none; stroke: #7051a3; stroke-width: 3; stroke-dasharray: 9 6; marker-end: url(#cloud-arrow); }
+</style>
+<rect width="640" height="1210" rx="16" fill="#f3f7fa"/>
+<text x="32" y="48" class="title">System &amp; data flow</text>
+<text x="32" y="83" class="small muted">Source behavior • not a wiring schematic</text>
+<path class="flow" d="M190 286 V322 H275 V357"/>
+<path class="flow" d="M455 286 V322 H365 V357"/>
+<path class="flow" d="M320 507 V567"/>
+<path class="cloud" d="M560 427 H610 V1010 H580"/>
+<rect class="box" x="40" y="126" width="280" height="160" rx="12"/>
+<text x="62" y="163" class="heading">DHT11</text>
+<text x="62" y="201" class="">Temperature + humidity</text>
+<text x="62" y="232" class="">GPIO2 / D4</text>
+<rect class="box" x="340" y="126" width="260" height="160" rx="12"/>
+<text x="362" y="163" class="heading">Digital detection</text>
+<text x="362" y="201" class="">LOW = detected</text>
+<text x="362" y="232" class="">GPIO16 / D0</text>
+<rect class="box" x="80" y="357" width="480" height="150" rx="12"/>
+<text x="102" y="394" class="heading">ESP8266 • NodeMCU</text>
+<text x="102" y="432" class="">One sequential Arduino loop</text>
+<text x="102" y="463" class="">Read → attempt telemetry → control</text>
+<rect class="box" x="60" y="567" width="520" height="303" rx="12"/>
+<text x="82" y="604" class="heading">Local output interfaces</text>
+<text x="82" y="642" class="">LCD: I2C • 0x27 • 16×2</text>
+<text x="82" y="673" class="">SDA/SCL not explicit in sketch</text>
+<text x="82" y="704" class="">Servo signal: GPIO0 / D3 • 0° / 165°</text>
+<text x="82" y="735" class="">LED control: GPIO13 / D7</text>
+<text x="82" y="766" class="">Fan-driver control: GPIO12 / D6</text>
+<text x="82" y="797" class="">LED/fan commands: HIGH on, LOW off</text>
+<rect class="box" x="60" y="937" width="520" height="155" rx="12"/>
+<text x="82" y="974" class="heading">Firebase RTDB • outbound attempt</text>
+<text x="82" y="1012" class="">Wi-Fi + anonymous sign-up attempt</text>
+<text x="82" y="1043" class="">sensor/temperature • sensor/humidity</text>
+<text x="60" y="1139" class="small accent">Solid: local data / control signals</text>
+<text x="60" y="1172" class="small muted">Dashed: network attempt • no power wiring shown</text>
+</svg>

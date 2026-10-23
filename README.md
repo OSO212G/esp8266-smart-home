@@ -1,44 +1,39 @@
 # ESP8266 Smart Home Prototype
 
+An ESP8266 sketch that reads room temperature and humidity, displays them on a 16×2 LCD, and uses an active-low detection input to command a servo and temperature-dependent LED/fan control signals. It also attempts outbound Firebase telemetry.
+
 Developed by Abdulla Salem.
 
-An ESP8266 prototype combining temperature/humidity sensing, an active-low motion/proximity input, an I2C LCD, a servo, LED/fan outputs and Firebase telemetry code. **Compile-verified source, not a production home controller.** Known application defects are preserved and documented.
+**[Read the sketch](firmware/SmartHomePrototype/SmartHomePrototype.ino)** · **[Build with placeholders](docs/BUILD-NOTES.md)** · **[Control flow & timing](docs/CONTROL-FLOW.md)** · **[Limitations](docs/SECURITY-AND-LIMITATIONS.md)**
 
-## Implemented behavior
+![Source-level system and data flow: two inputs feed the ESP8266, which drives local control/display signals and attempts outbound Firebase writes.](docs/assets/system-flow.svg)
 
-- DHT11 temperature/humidity readings and a 16×2 LCD display.
-- Active-low digital detection with servo commands to 0° and, after an interval, 165°.
-- Within the active-low detection branch, LED/fan outputs turn on above 25°C, followed by a blocking wait until temperature is at most 24°C or a sensor error occurs.
-- Wi-Fi connection, attempted anonymous Firebase sign-up and writes to `sensor/temperature` and `sensor/humidity`.
+## What the code does
 
-These describe the source, not demonstrated physical operation. No LDR input, remote application, energy measurement or verified air-conditioner control is implemented in this sketch.
+| Input / condition | Source behavior |
+|---|---|
+| DHT11 on GPIO2 / D4 | Reads integer temperature and humidity; refreshes LCD values at the end of the outer loop. |
+| Detection on GPIO16 / D0 is **LOW** | Commands the servo to 0° each sampled pass; if `ct - pt > 1500`, also commands 165° and sets `pt = ct`. |
+| LOW detection **and temperature > 25°C** | Sets LED GPIO13 / D7 and fan-driver GPIO12 / D6 HIGH. Blocks while temperature stays > 24°C, with a 1-second delay before each re-read. |
+| Cooling read succeeds at **≤ 24°C**, or fails | Sets both outputs LOW, reports the actual exit reason, then waits 15 seconds. |
+| Firebase ready + sign-up succeeded + timer due | Attempts integer writes to `sensor/temperature` and `sensor/humidity`. This happens before read-result validation. |
 
-## Verification
+The servo signal is GPIO0 / D3. The LCD uses I2C address `0x27`; its SDA/SCL pins are not assigned explicitly in the sketch. These are **signal interfaces, not power wiring**. See the [system visual](docs/assets/system-flow.svg) and [exact timing visual](docs/CONTROL-FLOW.md).
 
-The unchanged sanitized sketch compiled and linked on **23 October 2026** for `esp8266:esp8266:nodemcuv2`, using Arduino CLI **1.4.1**, ESP8266 core **3.1.2**, DHT11 **2.1.0**, LiquidCrystal I2C **1.1.2** and Firebase Arduino Client Library for ESP8266 and ESP32 **4.4.17**. Configuration contained placeholders only. Dependency warnings remain, including AVR-only LCD metadata; reported instruction RAM usage was 95%.
+## Implementation choices visible in the sketch
 
-A successful build does **not** prove sensor accuracy, wiring, actuator behavior, cloud operation, electrical safety or runtime stability. No firmware upload, hardware operation or real cloud connection was performed in that verification. See [build notes](docs/BUILD-NOTES.md) for dependencies, GPIO assignments and reproduction limits.
+This is my small, single-sketch prototype: local display, detection-driven servo commands and a two-threshold cooling branch in one loop. The >25°C start and ≤24°C normal stop are different thresholds; the fan decision is only reached when detection is LOW. These are implemented constants, not calibrated environmental recommendations.
 
-## Compile-only setup
+The main trade-off is visible in the control flow: while cooling, the sketch stops normal detection polling and outer telemetry updates. Servo timing is elapsed-time based, **not** a 1.5-second sustained-detection test. `pt` is not reset when detection begins, and the next sampled LOW pass commands 0° again. [Control flow & timing](docs/CONTROL-FLOW.md) makes those details explicit.
 
-```text
-firmware/SmartHomePrototype/
-  SmartHomePrototype.ino
-  config.example.h
-```
+## Compile-only verification
 
-Copy `config.example.h` to `config.h` in the same directory, leaving placeholders unchanged. `config.h` is ignored and is the configuration header actually used by the sketch; an `.env` file is not used. With the pinned dependencies installed, run from the repository root:
+The revised sketch compiled and linked on **23 October 2026** with Arduino CLI **1.4.1**, ESP8266 core **3.1.2** and target `esp8266:esp8266:nodemcuv2`, using placeholder configuration. [Build notes](docs/BUILD-NOTES.md) include exact dependency setup, the source hash, build result and Windows path caveat.
 
-```sh
-arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --warnings all firmware/SmartHomePrototype
-```
+This verifies compilation, not working hardware or cloud integration. The prototype still has unbounded network/cooling waits, invalid-reading handling gaps and unverified actuator power/safe states. Do not use it for mains appliances or unattended loads. Details are collected in [security and limitations](docs/SECURITY-AND-LIMITATIONS.md).
 
-No hardware or usable credentials are needed for compilation. This is not an upload command or a fresh-machine installation guarantee.
+## Project status
 
-## Limitations
+Personal prototype source, maintained here as a documented reference rather than a supported home-control product. No remote-control app, energy measurement or air-conditioner interface is implemented. This revision adds documentation/diagrams and narrowly corrects comments and an exit diagnostic; it does not redesign control behavior.
 
-Unbounded Wi-Fi connection wait, invalid sensor uploads, blocking cooling/15-second waits and incorrect pin comments remain. Read [security and limitations](docs/SECURITY-AND-LIMITATIONS.md). Do not connect mains appliances or unattended loads based on this source.
-
-## Dependencies
-
-ESP8266 Arduino core (including Wire, Servo, ESP8266WiFi and ESP8266HTTPClient), DHT11, LiquidCrystal I2C and Firebase Arduino Client Library for ESP8266 and ESP32 are separate third-party dependencies. Their work is acknowledged; their packages are not bundled. Exact tested versions and required APIs are in the build notes.
+ESP8266 Arduino core, DHT11, LiquidCrystal I2C and the Firebase client are separate third-party dependencies, not bundled code. No license has been selected for this repository; publication alone does not grant reuse rights.
